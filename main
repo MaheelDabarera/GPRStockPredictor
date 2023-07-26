@@ -1,0 +1,41 @@
+import numpy as np
+import pandas as pd
+from flask import Flask, render_template, request, jsonify
+import alpaca_trade_api as tradeapi
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
+
+app = Flask(__name__)
+
+# Sample stock data (replace this with your real data)
+# Assuming a single feature (e.g., time) and a target variable (e.g., stock price)
+data = pd.DataFrame({
+    'Time': [1, 2, 3, 4, 5],
+    'StockPrice': [100, 120, 150, 130, 140]
+})
+
+# Train a Gaussian Process Regressor with RBF kernel
+X = data[['Time']]
+y = data['StockPrice']
+kernel = 1.0 * RBF()
+regressor = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=10)
+regressor.fit(X, y)
+
+@app.route('/', methods=['GET', 'POST'])
+def home():
+    if request.method == 'POST':
+        time = float(request.form['time'])
+        predicted_price = regressor.predict([[time]])[0]
+        return render_template('index.html', time=time, predicted_price=predicted_price)
+    return render_template('index.html')
+
+@app.route('/predict', methods=['POST'])
+def predict():
+    if request.method == 'POST':
+        data = request.get_json()
+        time = float(data['time'])
+        predicted_price = regressor.predict([[time]])[0]
+        return jsonify({'predicted_price': predicted_price})
+
+if __name__ == '__main__':
+    app.run(debug=True)
