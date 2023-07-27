@@ -5,5 +5,5 @@ Flask==2.1.1
 alpaca-trade-api==1.4.0
 scikit-learn==0.24.2
 yfinance==0.1.63
-tensorflow==2.6.0
+tensorflow==2.11.1
 keras==2.6.0
