@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import tensorflow as tf
 import yfinance as yf
 from datetime import datetime, timedelta
 from sklearn.preprocessing import MinMaxScaler
@@ -9,7 +8,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/predict": {"origins": "http://localhost:3000"}})
 
 def fetch_stock_data(ticker, period='1y'):
     try:
@@ -36,6 +35,9 @@ def predict_stock_price(ticker):
     if data.empty:
         return {"error": f"No data available for {ticker}"}
     
+    if len(data) < 31:  # Need at least 31 days of data
+        return {"error": f"Insufficient data for {ticker}"}
+    
     X, y, scaler = prepare_data(data)
     
     model = LinearRegression()
@@ -58,8 +60,11 @@ def predict():
     if not ticker:
         return jsonify({"error": "No ticker provided"}), 400
     
-    result = predict_stock_price(ticker)
-    return jsonify(result)
+    try:
+        result = predict_stock_price(ticker)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
